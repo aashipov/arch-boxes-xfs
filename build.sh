@@ -57,8 +57,8 @@ function setup_disk() {
   # Partscan is racy
   wait_until_settled "${LOOPDEV}"
   mkfs.fat -F 32 -S 4096 "${LOOPDEV}p2"
-  mkfs.btrfs "${LOOPDEV}p3"
-  mount -o compress=zstd:1 "${LOOPDEV}p3" "${MOUNT}"
+  mkfs.xfs -f -n ftype=1 "${LOOPDEV}p3"
+  mount -t xfs "${LOOPDEV}p3" "${MOUNT}"
   mount --mkdir "${LOOPDEV}p2" "${MOUNT}/efi"
 }
 
@@ -78,7 +78,7 @@ EOF
   echo "Server = ${MIRROR}" >mirrorlist
 
   # We use the hosts package cache
-  pacstrap -c -C pacman.conf -K -M "${MOUNT}" base linux grub openssh sudo btrfs-progs dosfstools efibootmgr qemu-guest-agent
+  pacstrap -c -C pacman.conf -K -M "${MOUNT}" base linux grub openssh sudo xfsprogs dosfstools efibootmgr qemu-guest-agent
   # Workaround for https://gitlab.archlinux.org/archlinux/arch-install-scripts/-/issues/56
   gpgconf --homedir "${MOUNT}/etc/pacman.d/gnupg" --kill gpg-agent
   cp mirrorlist "${MOUNT}/etc/pacman.d/"
@@ -119,7 +119,7 @@ function mount_image() {
   LOOPDEV=$(losetup --find --partscan --show "${1:-${IMAGE}}")
   # Partscan is racy
   wait_until_settled "${LOOPDEV}"
-  mount -o compress=zstd:1 "${LOOPDEV}p3" "${MOUNT}"
+  mount -t xfs "${LOOPDEV}p3" "${MOUNT}"
   # Setup bind mount to package cache
   mount --bind "/var/cache/pacman/pkg" "${MOUNT}/var/cache/pacman/pkg"
 }
@@ -157,7 +157,7 @@ function create_image() {
   fi
   mount_image "${tmp_image}"
   if [ -n "${DISK_SIZE}" ]; then
-    btrfs filesystem resize max "${MOUNT}"
+    xfs_growfs "${MOUNT}"
   fi
 
   if [ 0 -lt "${#PACKAGES[@]}" ]; then

@@ -22,7 +22,7 @@ The cloud image is meant to be used in "the cloud" and comes with [`cloud-init`]
 You'll need the following dependencies:
 
 * arch-install-scripts
-* btrfs-progs
+* xfsprogs
 * curl
 * dosfstools
 * gptfdisk
